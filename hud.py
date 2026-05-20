@@ -1,4 +1,4 @@
-﻿import math
+import math
 import os
 
 import bpy
@@ -29,7 +29,7 @@ from .node_utils import (
     node_under_mouse,
     window_region,
 )
-from .properties import add_color, add_group, remove_color, remove_group
+from .properties import add_color, add_group, ensure_palette, remove_color, remove_group
 
 
 def version_text(info):
@@ -99,6 +99,7 @@ class RA_OT_ColorPaletteHUD(bpy.types.Operator):
             self.report({"WARNING"}, "未找到节点窗口区域")
             return {"CANCELLED"}
 
+        ensure_palette(context.scene)
         self._ensure_group(context.scene)
         paper_top = self._region.height - self._PRINTER_H + self._PRINTER_OVERLAP - self._TOP_CLEARANCE
         self._panel_rect = (36, max(8, paper_top - 190), 312, 190)
@@ -706,7 +707,7 @@ class RA_OT_ColorPaletteHUD(bpy.types.Operator):
 
     def _ensure_group(self, scene):
         if len(scene.WittyMing_color_palette_groups) == 0:
-            add_group(scene)
+            add_group(scene, sync=False)
         max_group = len(scene.WittyMing_color_palette_groups) - 1
         for item in scene.WittyMing_color_palette_colors:
             if item.group < 0 or item.group > max_group:

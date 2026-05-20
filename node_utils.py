@@ -1,13 +1,5 @@
 import bpy
 
-try:
-    from ctypes import c_float, c_void_p
-    from mathutils import Vector
-except Exception:
-    c_float = None
-    c_void_p = None
-    Vector = None
-
 
 def is_material_shader_editor(context):
     space = context.space_data
@@ -57,41 +49,6 @@ def _node_bounds(node):
         y_min = y * scale
         y_max = y_min - node.dimensions.y
     return x_min, x_max, y_min, y_max
-
-
-def _node_socket_coords(node):
-    if not c_float or not c_void_p or not Vector:
-        return []
-    if node.type == "FRAME":
-        return []
-    scale = bpy.context.preferences.system.ui_scale
-    if node.type == "REROUTE":
-        x, y = _node_abs_location(node)
-        socket = node.inputs[0] if node.inputs else None
-        return [(socket, x * scale, y * scale)] if socket else []
-
-    runtime_offset = 520
-    location_offset = 24
-    if bpy.app.version >= (5, 1, 0):
-        runtime_offset = 456
-    if bpy.app.version >= (5, 2, 0):
-        location_offset = 32
-
-    coords = []
-    for sockets in (node.inputs, node.outputs):
-        for socket in sockets:
-            if not getattr(socket, "enabled", True):
-                continue
-            try:
-                runtime = c_void_p.from_address(socket.as_pointer() + runtime_offset).value
-                if not runtime:
-                    continue
-                loc = Vector((c_float * 2).from_address(runtime + location_offset))
-                if getattr(socket, "is_icon_visible", True):
-                    coords.append((socket, loc.x, loc.y))
-            except Exception:
-                continue
-    return coords
 
 
 def active_node_tree(context):
@@ -153,34 +110,20 @@ def color_at_mouse(context, region, mouse_xy):
             candidates.append(((cx - rx) ** 2 + (cy - ry) ** 2, node, left, right))
 
     for _dist, node, left, right in sorted(candidates, key=lambda item: item[0]):
-        socket_hits = []
-        for socket, sx, sy in _node_socket_coords(node):
-            color = socket_color(socket)
-            if not color:
-                continue
-            row_hit = abs(ry - sy) <= 22 and left - 12 <= rx <= right + 18
-            socket_hit = (rx - sx) ** 2 + (ry - sy) ** 2 <= 34 * 34
-            if row_hit or socket_hit:
-                socket_hits.append((abs(ry - sy), color))
-        if socket_hits:
-            socket_hits.sort(key=lambda item: item[0])
-            return socket_hits[0][1]
-
         color = color_from_node(node)
-        if color and _color_node_body_hit(node, rx, ry, left, right):
+        if color and _node_color_hit(node, rx, ry, left, right):
             return color
     return None
 
 
-def _color_node_body_hit(node, rx, ry, left, right):
-    if node.type not in {"RGB", "VALTORGB", "MIX_RGB"}:
-        return False
+def _node_color_hit(node, rx, ry, left, right):
     try:
         _x_min, _x_max, y_min, y_max = _node_bounds(node)
     except Exception:
         return False
     bottom, top = min(y_min, y_max), max(y_min, y_max)
-    return left - 8 <= rx <= right + 8 and bottom - 8 <= ry <= top + 8
+    margin = 8 if node.type in {"RGB", "VALTORGB", "MIX_RGB"} else 2
+    return left - margin <= rx <= right + margin and bottom - margin <= ry <= top + margin
 
 
 def node_under_mouse(context, region, mouse_xy):

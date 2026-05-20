@@ -803,28 +803,18 @@ def checker(x, y, size):
 
 
 def _asset_texture(path):
-    try:
-        mtime = os.path.getmtime(path)
-    except OSError:
-        mtime = None
     cached = _ASSET_TEXTURES.get(path)
     if cached is not None:
-        cached_mtime, texture, _size = cached
-        if cached_mtime == mtime:
-            return texture or None
+        texture, _size = cached
+        return texture or None
     try:
         image = bpy.data.images.load(path, check_existing=True)
-        if mtime is not None and image.filepath:
-            try:
-                image.reload()
-            except Exception:
-                pass
         texture = gpu.texture.from_image(image)
     except Exception:
         texture = False
         image = None
     size = tuple(image.size) if image else (0, 0)
-    _ASSET_TEXTURES[path] = (mtime, texture, size)
+    _ASSET_TEXTURES[path] = (texture, size)
     return texture or None
 
 
@@ -833,7 +823,7 @@ def image_size(path):
     cached = _ASSET_TEXTURES.get(path)
     if not cached:
         return None
-    _mtime, texture, size = cached
+    texture, size = cached
     if not texture or not size or size[0] <= 0 or size[1] <= 0:
         return None
     return size

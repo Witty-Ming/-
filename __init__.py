@@ -1,4 +1,4 @@
-﻿bl_info = {
+bl_info = {
     "name": "色板",
     "author": "WittyMing",
     "version": (1, 2, 0),
@@ -9,11 +9,18 @@
 }
 
 import bpy
+from bpy.app.handlers import persistent
 
 from .constants import ZERO_COLOR
 from .hud import RA_OT_ColorPaletteHUD
 from .panel import RA_PT_ColorPalettePanel
-from .properties import RA_ColorPaletteGroup, RA_ColorPaletteSlot, capture_color_update
+from .properties import (
+    RA_ColorPaletteGroup,
+    RA_ColorPaletteSlot,
+    WittyMingColorPalettePreferences,
+    capture_color_update,
+    ensure_palette,
+)
 
 
 RA_OT_ColorPaletteHUD._bl_info = bl_info
@@ -21,6 +28,7 @@ RA_PT_ColorPalettePanel.bl_label = bl_info["name"]
 
 
 _classes = (
+    WittyMingColorPalettePreferences,
     RA_ColorPaletteGroup,
     RA_ColorPaletteSlot,
     RA_OT_ColorPaletteHUD,
@@ -73,6 +81,21 @@ def _stop_hud_if_running():
     RA_OT_ColorPaletteHUD._running = None
 
 
+@persistent
+def _restore_palette_after_load(_dummy):
+    ensure_palette(bpy.context.scene)
+
+
+def _ensure_handlers():
+    if _restore_palette_after_load not in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.append(_restore_palette_after_load)
+
+
+def _remove_handlers():
+    if _restore_palette_after_load in bpy.app.handlers.load_post:
+        bpy.app.handlers.load_post.remove(_restore_palette_after_load)
+
+
 def register():
     _stop_hud_if_running()
     _clear_scene_props()
@@ -96,10 +119,13 @@ def register():
         default=ZERO_COLOR,
         update=capture_color_update,
     )
+    ensure_palette(bpy.context.scene)
+    _ensure_handlers()
 
 
 def unregister():
     _stop_hud_if_running()
+    _remove_handlers()
 
     _clear_scene_props()
 
