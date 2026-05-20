@@ -1,10 +1,10 @@
 bl_info = {
-    "name": "色板",
+    "name": "Color Palette",
     "author": "WittyMing",
-    "version": (1, 2, 0),
+    "version": (1, 2, 1),
     "blender": (4, 0, 0),
-    "location": "Shader Editor > N 面板 > 工具",
-    "description": "在材质节点编辑器侧边栏记录并拖放颜色",
+    "location": "Shader Editor > N Panel > Color Palette",
+    "description": "Record and drag colors in the material node editor",
     "category": "Node",
 }
 
@@ -21,6 +21,7 @@ from .properties import (
     capture_color_update,
     ensure_palette,
 )
+from . import translation
 
 
 RA_OT_ColorPaletteHUD._bl_info = bl_info
@@ -97,6 +98,7 @@ def _remove_handlers():
 
 
 def register():
+    translation.register()
     _stop_hud_if_running()
     _clear_scene_props()
     for cls in reversed(_classes):
@@ -111,7 +113,7 @@ def register():
     bpy.types.Scene.WittyMing_color_palette_hud_x = bpy.props.FloatProperty(default=-1.0)
     bpy.types.Scene.WittyMing_color_palette_hud_printer_top = bpy.props.FloatProperty(default=-1.0)
     bpy.types.Scene.WittyMing_color_palette_capture = bpy.props.FloatVectorProperty(
-        name="记录颜色",
+        name="Record Color",
         subtype="COLOR",
         size=4,
         min=0.0,
@@ -131,6 +133,8 @@ def unregister():
 
     for cls in reversed(_classes):
         _safe_unregister_class(cls)
+
+    translation.unregister()
 
 
 if __name__ == "__main__":

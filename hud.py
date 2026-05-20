@@ -31,6 +31,8 @@ from .node_utils import (
 )
 from .properties import add_color, add_group, ensure_palette, remove_color, remove_group
 
+iface_ = bpy.app.translations.pgettext_iface
+
 
 def version_text(info):
     return ".".join(str(part) for part in info.get("version", ()))
@@ -38,7 +40,7 @@ def version_text(info):
 
 class RA_OT_ColorPaletteHUD(bpy.types.Operator):
     bl_idname = "wittyming_color_palette.hud"
-    bl_label = "GPU 色板"
+    bl_label = "GPU Color Palette"
     bl_options = {"REGISTER"}
 
     _running = None
@@ -86,7 +88,7 @@ class RA_OT_ColorPaletteHUD(bpy.types.Operator):
     def invoke(self, context, event):
         self._reset_state()
         if not is_material_shader_editor(context):
-            self.report({"WARNING"}, "请在材质节点编辑器使用")
+            self.report({"WARNING"}, iface_("Please use this in the material node editor"))
             return {"CANCELLED"}
         if RA_OT_ColorPaletteHUD.is_running():
             RA_OT_ColorPaletteHUD._running.stop(context)
@@ -96,7 +98,7 @@ class RA_OT_ColorPaletteHUD(bpy.types.Operator):
         self._area = context.area
         self._region = window_region(context.area)
         if not self._region:
-            self.report({"WARNING"}, "未找到节点窗口区域")
+            self.report({"WARNING"}, iface_("Node window region not found"))
             return {"CANCELLED"}
 
         ensure_palette(context.scene)
@@ -229,9 +231,9 @@ class RA_OT_ColorPaletteHUD(bpy.types.Operator):
                         remove_color(context.scene, self._drag_color_index)
                         removed = True
                 if applied:
-                    self.report({"INFO"}, "已应用颜色")
+                    self.report({"INFO"}, iface_("Color applied"))
                 elif removed:
-                    self.report({"INFO"}, "已删除颜色")
+                    self.report({"INFO"}, iface_("Color deleted"))
                 self._drag_color = None
                 self._drag_color_index = None
                 self._set_open_target(context, 1.0 if self._near_interface(mx, my) else 0.0)
@@ -245,7 +247,7 @@ class RA_OT_ColorPaletteHUD(bpy.types.Operator):
                     if color:
                         group_index = self._group_at(mx, my)
                         add_color(context.scene, color, group_index)
-                        self.report({"INFO"}, "已记录颜色")
+                        self.report({"INFO"}, iface_("Color recorded"))
                         self._record_source = None
                         self._record_candidate_color = None
                         self._record_active = False
@@ -386,7 +388,7 @@ class RA_OT_ColorPaletteHUD(bpy.types.Operator):
             self._draw_header(x, y, w, h, info)
 
             if len(colors) == 0:
-                text("拖入颜色以记录", x + w * 0.5, y + h - 126, 11, T["muted"], "CENTER", True)
+                text(iface_("Drag color here to record"), x + w * 0.5, y + h - 126, 11, T["muted"], "CENTER", True)
 
             for group_index in range(len(groups)):
                 self._draw_group_divider(x, w, pad, group_index)
@@ -580,7 +582,7 @@ class RA_OT_ColorPaletteHUD(bpy.types.Operator):
 
     def _draw_header(self, x, y, w, h, info):
         line(((x + 26, y + h - 82), (x + w - 26, y + h - 82)), T["divider"], 1.0)
-        title = info.get("name", "色板")
+        title = iface_(info.get("name", "Color Palette"))
         title_y = y + h - 65
         title_asset_x = x + 34
         title_asset_y = y + h - 80
@@ -602,6 +604,8 @@ class RA_OT_ColorPaletteHUD(bpy.types.Operator):
         )
 
     def _draw_title_asset(self, x, y, w, h):
+        if not self._use_chinese_title_asset():
+            return False
         path = os.path.join(os.path.dirname(__file__), "assets", "palette_title.png")
         size = image_size(path)
         if not size:
@@ -611,6 +615,10 @@ class RA_OT_ColorPaletteHUD(bpy.types.Operator):
         draw_w = image_w * scale
         draw_h = image_h * scale
         return image_rect(path, x + (w - draw_w) * 0.5, y + (h - draw_h) * 0.5, draw_w, draw_h)
+
+    def _use_chinese_title_asset(self):
+        language = getattr(bpy.context.preferences.view, "language", "")
+        return language in {"zh_CN", "zh_HANS", "zh_TW", "zh_HANT"}
 
     def _draw_receipt_shadow(self, x, y, w, h):
         side_h = max(8, h - 38)

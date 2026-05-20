@@ -4,6 +4,8 @@ import bpy
 
 from .constants import ZERO_COLOR
 
+iface_ = bpy.app.translations.pgettext_iface
+
 
 _CAPTURE_LOCK = False
 _SYNC_LOCK = False
@@ -186,10 +188,10 @@ def capture_color_update(scene, context):
 
 
 class RA_ColorPaletteSlot(bpy.types.PropertyGroup):
-    name: bpy.props.StringProperty(name="名称", default="Color")
-    group: bpy.props.IntProperty(name="分组", default=0, min=0)
+    name: bpy.props.StringProperty(name="Name", default="Color")
+    group: bpy.props.IntProperty(name="Group", default=0, min=0)
     color: bpy.props.FloatVectorProperty(
-        name="颜色",
+        name="Color",
         subtype="COLOR",
         size=4,
         min=0.0,
@@ -199,7 +201,7 @@ class RA_ColorPaletteSlot(bpy.types.PropertyGroup):
 
 
 class RA_ColorPaletteGroup(bpy.types.PropertyGroup):
-    name: bpy.props.StringProperty(name="名称", default="Group")
+    name: bpy.props.StringProperty(name="Name", default="Group")
 
 
 class WittyMingColorPalettePreferences(bpy.types.AddonPreferences):
@@ -208,4 +210,4 @@ class WittyMingColorPalettePreferences(bpy.types.AddonPreferences):
     palette_data: bpy.props.StringProperty(default="", options={"HIDDEN"})
 
     def draw(self, context):
-        self.layout.label(text="Color palette records are stored automatically.")
+        self.layout.label(text=iface_("Color palette records are stored automatically."))
